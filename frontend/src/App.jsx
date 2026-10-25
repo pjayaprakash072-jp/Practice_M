@@ -1,5 +1,19 @@
+
 import { useEffect, useState } from "react";
 import "./App.css";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+  return Uint8Array.from(rawData, (char) => char.charCodeAt(0));
+}
 
 function App() {
   const [tasks, setTasks] = useState(() => {
@@ -12,29 +26,71 @@ function App() {
 
   const [taskInput, setTaskInput] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    () => "Notification" in window && Notification.permission === "granted"
+  );
+  const [notificationLoading, setNotificationLoading] = useState(false);
 
-  // Save tasks whenever they change
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
-  // Request permission only after the user taps the button
   async function enableNotifications() {
-    if (!("Notification" in window)) {
-      alert("Notifications are not supported in this browser.");
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      alert("Push notifications are not supported in this browser.");
       return;
     }
 
-    const permission = await Notification.requestPermission();
+    if (!VAPID_PUBLIC_KEY) {
+      alert("VAPID public key is missing from your frontend .env file.");
+      return;
+    }
 
-    if (permission === "granted") {
-      alert("Notifications enabled!");
-    } else {
-      alert("Notifications were not enabled. Check your browser settings.");
+    setNotificationLoading(true);
+
+    try {
+      const permission = await Notification.requestPermission();
+
+      if (permission !== "granted") {
+        alert("Please allow notifications in your browser settings.");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
+
+      const response = await fetch(`${API_URL}/api/subscribe`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(subscription.toJSON()),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Subscription request failed (${response.status})`);
+      }
+
+      setNotificationsEnabled(true);
+      alert("Push notifications enabled successfully!");
+    } catch (error) {
+      console.error("Could not enable push notifications:", error);
+      alert(
+        "Could not enable push notifications. Check that your backend is running and its subscription route is correct."
+      );
+    } finally {
+      setNotificationLoading(false);
     }
   }
 
-  // Add a task with an optional reminder date and time
   function addTask(e) {
     e.preventDefault();
 
@@ -59,18 +115,16 @@ function App() {
     setDueDate("");
   }
 
-  // Confirm before removing a task
   function removeTask(id) {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this task?"
-    );
-
-    if (confirmed) {
-      setTasks((previous) => previous.filter((task) => task.id !== id));
+    if (!window.confirm("Are you sure you want to delete this task?")) {
+      return;
     }
+
+    setTasks((previous) => previous.filter((task) => task.id !== id));
   }
 
-  // Check for reminders while the app is open
+  // Fallback reminders work only while this page is open.
+  // Background reminders require backend scheduling and Web Push.
   useEffect(() => {
     async function checkReminders() {
       if (
@@ -91,11 +145,9 @@ function App() {
 
       if (dueTasks.length === 0) return;
 
-      let registration = null;
-
-      if ("serviceWorker" in navigator) {
-        registration = await navigator.serviceWorker.getRegistration();
-      }
+      const registration = await navigator.serviceWorker
+        .getRegistration()
+        .catch(() => null);
 
       for (const task of dueTasks) {
         try {
@@ -125,7 +177,6 @@ function App() {
     checkReminders();
 
     const interval = setInterval(checkReminders, 15000);
-
     return () => clearInterval(interval);
   }, [tasks]);
 
@@ -134,8 +185,16 @@ function App() {
       <header className="app-header">
         <h1>My To-Do List</h1>
 
-        <button type="button" onClick={enableNotifications}>
-          Enable Notifications
+        <button
+          type="button"
+          onClick={enableNotifications}
+          disabled={notificationLoading}
+        >
+          {notificationLoading
+            ? "Enabling..."
+            : notificationsEnabled
+              ? "Enable Notifications Again"
+              : "Enable Notifications"}
         </button>
       </header>
 
@@ -194,93 +253,3 @@ function App() {
 }
 
 export default App;
-
-// import { useEffect, useState } from "react";
-// import "./App.css";
-
-// function App() {
-//   // Load saved tasks from localStorage when React initializes
-//   const [tasks, setTasks] = useState(() => {
-//     try {
-//       const savedTasks = localStorage.getItem("tasks");
-//       return savedTasks ? JSON.parse(savedTasks) : [];
-//     } catch {
-//       return [];
-//     }
-//   });
-
-//   // Store the input field value
-//   const [taskInput, setTaskInput] = useState("");
-
-//   // Save tasks whenever the tasks state changes
-//   useEffect(() => {
-//     localStorage.setItem("tasks", JSON.stringify(tasks));
-//   }, [tasks]);
-
-//   // Add a new task
-//   function addTask(e) {
-//     e.preventDefault();
-
-//     const trimmedTask = taskInput.trim();
-
-//     if (!trimmedTask) return;
-
-//     const newTask = {
-//       id: crypto.randomUUID(),
-//       title: trimmedTask,
-//     };
-
-//     setTasks((previousTasks) => [...previousTasks, newTask]);
-//     setTaskInput("");
-//   }
-
-//   // Remove a task by its ID
-//   function removeTask(id) {
-//     setTasks((previousTasks) =>
-//       previousTasks.filter((task) => task.id !== id)
-//     );
-//   }
-
-//   return (
-//     <div className="app">
-//       <h1>My To-Do List</h1>
-
-//       <form onSubmit={addTask} className="task-form">
-//         <input
-//           type="text"
-//           placeholder="Enter a task..."
-//           value={taskInput}
-//           onChange={(e) => setTaskInput(e.target.value)}
-//         />
-
-//         <button type="submit">Add Task</button>
-//       </form>
-
-//       {tasks.length === 0 ? (
-//         <p className="empty-message">No tasks yet. Add one!</p>
-//       ) : (
-//         <ul className="task-list">
-//           {tasks.map((task) => (
-//             <li key={task.id} className="task-item">
-//               <span>{task.title}</span>
-
-//               <button
-//                 type="button"
-//                 className="delete-button"
-//                 onClick={() => removeTask(task.id)}
-//               >
-//                 Remove
-//               </button>
-//             </li>
-//           ))}
-//         </ul>
-//       )}
-
-//       <p className="task-count">
-//         Total tasks: {tasks.length}
-//       </p>
-//     </div>
-//   );
-// }
-
-// export default App;
