@@ -1,4 +1,139 @@
+.app {
+  --bg: #f3f4f6;
+  --card: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --border: #d1d5db;
+  --primary: #2563eb;
+  --danger: #dc2626;
 
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 24px;
+  color: var(--text);
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgb(0 0 0 / 8%);
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.app h1 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.task-form input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.task-form button,
+.app-header button,
+.delete-button {
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.task-form button,
+.app-header button {
+  color: white;
+  background: var(--primary);
+}
+
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 24px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.task-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.task-details small,
+.empty-message,
+.task-count {
+  color: var(--muted);
+}
+
+.delete-button {
+  flex-shrink: 0;
+  color: white;
+  background: var(--danger);
+}
+
+.empty-message,
+.task-count {
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Automatically follow the device's theme */
+@media (prefers-color-scheme: dark) {
+  .app {
+    --bg: #111827;
+    --card: #1f2937;
+    --text: #f9fafb;
+    --muted: #9ca3af;
+    --border: #374151;
+    --primary: #3b82f6;
+    --danger: #ef4444;
+
+    box-shadow: 0 4px 24px rgb(0 0 0 / 25%);
+  }
+}
+
+@media (max-width: 480px) {
+  .app {
+    margin: 12px;
+    padding: 16px;
+  }
+
+  .app-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .task-item {
+    align-items: flex-start;
+  }
+}
+
+
+/* 
 .app {
   max-width: 500px;
   margin: 60px auto;
@@ -97,4 +232,4 @@
   .task-form {
     flex-direction: column;
   }
-}
+} */
