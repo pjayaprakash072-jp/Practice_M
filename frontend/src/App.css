@@ -1,0 +1,100 @@
+
+.app {
+  max-width: 500px;
+  margin: 60px auto;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.app h1 {
+  text-align: center;
+  margin-bottom: 24px;
+  color: #222;
+}
+
+.task-form {
+  display: flex;
+  gap: 10px;
+}
+
+.task-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+.task-form button,
+.delete-button {
+  border: none;
+  border-radius: 6px;
+  padding: 10px 14px;
+  cursor: pointer;
+  color: white;
+}
+
+.task-form button {
+  background: #2563eb;
+}
+
+.task-form button:hover {
+  background: #1d4ed8;
+}
+
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 24px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  overflow-wrap: anywhere;
+}
+
+.task-item span {
+  flex: 1;
+}
+
+.delete-button {
+  flex-shrink: 0;
+  background: #dc2626;
+}
+
+.delete-button:hover {
+  background: #b91c1c;
+}
+
+.empty-message,
+.task-count {
+  text-align: center;
+  color: #666;
+}
+
+.empty-message {
+  margin-top: 24px;
+}
+
+.task-count {
+  margin-top: 20px;
+}
+
+@media (max-width: 480px) {
+  .app {
+    margin: 20px 12px;
+    padding: 16px;
+  }
+
+  .task-form {
+    flex-direction: column;
+  }
+}
